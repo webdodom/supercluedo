@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#6b1e1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SuperCluedo">
+<title>SuperCluedo - Taccuino</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0; padding: 15px;
+    background: #f4f1ea; color: #333;
+    max-width: 1300px; margin: 0 auto;
+    padding-bottom: 30px;
+  }
+  h1 { color: #6b1e1e; margin: 0; font-size: 20px; }
+  h2 { color: #6b1e1e; margin: 20px 0 12px; font-size: 17px; }
+
+  .card {
+    background: #fff; border-radius: 8px;
+    padding: 15px; margin: 10px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  }
+
+  button {
+    padding: 8px 14px; border: none; border-radius: 5px;
+    background: #6b1e1e; color: #fff; cursor: pointer;
+    font-size: 13px; font-family: inherit;
+    touch-action: manipulation;
+  }
+  button:hover { background: #8b2e2e; }
+  button.secondary { background: #666; }
+  button.danger { background: #c62828; }
+
+  /* ============ BARRA TOP ============ */
+  .barra {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #fff; padding: 10px 15px; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1); margin-bottom: 15px;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .barra .utente { font-size: 14px; color: #666; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .barra select { padding: 5px 8px; border-radius: 5px; border: 1px solid #bbb; font-size: 13px; }
+  .barra button { padding: 5px 10px; font-size: 12px; }
+
+  /* ============ CONTENITORI ============ */
+  .contenitori-wrap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 900px) {
+    .contenitori-wrap { grid-template-columns: 1fr; }
+  }
+
+  .contenitore {
+    background: #fff; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    overflow: hidden;
+    transition: box-shadow .3s;
+  }
+  .cont-titolo {
+    padding: 8px 12px; font-weight: bold; letter-spacing: 1px;
+    text-align: center; font-size: 14px;
+  }
+  .finestrelle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .banner-cat-escluse {
+    background: #e3f2fd; color: #1565c0;
+    font-size: 10px; padding: 4px 8px;
+    text-align: center; border-bottom: 1px solid #90caf9;
+  }
+
+  /* Contenitore risolto */
+  .contenitore.risolto {
+    box-shadow: 0 0 0 3px #f9a825, 0 0 25px rgba(249, 168, 37, .8);
+    animation: pulseOro 1.8s ease-in-out infinite;
+  }
+  @keyframes pulseOro {
+    0%, 100% { box-shadow: 0 0 0 3px #f9a825, 0 0 25px rgba(249, 168, 37, .6); }
+    50%      { box-shadow: 0 0 0 3px #ffc107, 0 0 40px rgba(255, 193, 7, 1); }
+  }
+
+  .banner-soluzione {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #fff8e1 0%, #ffe082 50%, #ffd54f 100%);
+    background-size: 200% 200%;
+    animation: shimmer 2.5s linear infinite;
+    padding: 12px 15px;
+    border-bottom: 2px solid #f9a825;
+    position: relative; overflow: hidden;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .banner-soluzione::before {
+    content: ''; position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
+    animation: shine 3s infinite;
+  }
+  @keyframes shine {
+    0%   { left: -100%; }
+    60%  { left: 100%; }
+    100% { left: 100%; }
+  }
+  .banner-emoji {
+    font-size: 32px;
+    animation: bounce 1s ease infinite;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.2));
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-6px) scale(1.1); }
+  }
+  .banner-testo { flex: 1; text-align: center; position: relative; z-index: 1; }
+  .banner-label { font-size: 10px; font-weight: bold; color: #8b5a00; letter-spacing: 2px; }
+  .banner-nome { font-size: 18px; font-weight: bold; color: #6b1e1e; text-shadow: 0 1px 2px rgba(255,255,255,.8); margin-top: 2px; }
+
+  .fin {
+    border: 2px solid #ccc; border-radius: 6px;
+    padding: 6px; min-height: 120px;
+    cursor: pointer; transition: all .15s;
+    background: #fafafa;
+    display: flex; flex-direction: column;
+    font-size: 12px;
+  }
+  .fin:hover { border-color: #6b1e1e; }
+  .fin.compilata { background: #f0f8f0; border-color: #2e7d32; }
+
+  .fin-label {
+    font-size: 10px; color: #666; margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: .5px;
+    display: flex; justify-content: space-between;
+  }
+  .fin-vuota { flex: 1; display: flex; align-items: center; justify-content: center; color: #bbb; }
+  .fin-dati { margin: 6px 0; display: flex; align-items: center; gap: 8px; justify-content: center; }
+  .cerchio {
+    display: inline-block; width: 12px; height: 12px;
+    border-radius: 50%; border: 1px solid #666;
+    vertical-align: middle;
+  }
+  .quad {
+    display: inline-block; min-width: 20px; padding: 2px 6px;
+    border: 1px solid #666; border-radius: 4px;
+    text-align: center; font-weight: bold;
+    background: #fff; font-size: 14px;
+  }
+  .fin-candidati {
+    margin-top: 4px; padding-top: 4px;
+    border-top: 1px dashed #ccc;
+    font-size: 11px; line-height: 1.3;
+    flex: 1; text-align: center; color: #666;
+  }
+  .fin-azioni { display: flex; gap: 3px; margin-top: 4px; }
+  .fin-azioni button {
+    flex: 1; padding: 3px 6px; font-size: 10px;
+    background: #999; border-radius: 4px;
+  }
+  .fin-azioni button.svuota { background: #c62828; }
+
+  /* ============ CARTE ============ */
+  .tipo-titolo {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; padding-bottom: 6px;
+    border-bottom: 2px solid #ddd;
+  }
+  .contatore { font-size: 13px; color: #666; }
+
+  .legenda {
+    display: flex; gap: 15px; flex-wrap: wrap; align-items: center;
+    background: #fff; padding: 10px 15px; border-radius: 8px;
+    margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    font-size: 12px;
+  }
+  .legenda .voce { display: flex; align-items: center; gap: 5px; }
+  .legenda .quadratino {
+    display: inline-block; width: 18px; height: 18px;
+    border-radius: 4px; border: 1px solid #666;
+  }
+
+  .griglia-carte {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  .carta {
+    background: #fafafa; border: 2px solid #ddd;
+    border-radius: 6px; padding: 8px 10px;
+    position: relative;
+  }
+  .carta.tipo-personaggio { border-left: 5px solid #c62828; }
+  .carta.tipo-arma       { border-left: 5px solid #1565c0; }
+  .carta.tipo-stanza     { border-left: 5px solid #2e7d32; }
+
+  .carta .nome { font-weight: bold; font-size: 13px; padding-right: 28px; }
+  .carta .codici {
+    font-size: 11px; color: #666; margin-top: 5px;
+    display: flex; gap: 10px;
+  }
+  .carta .tag-contenitori { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 3px; }
+  .carta .tag-cont {
+    font-size: 9px; padding: 2px 6px; border-radius: 3px;
+    font-weight: bold; letter-spacing: .5px;
+  }
+
+  .btn-x {
+    position: absolute; top: 6px; right: 6px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #c62828; color: #fff; border: none;
+    cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
+  }
+  .btn-ripristina {
+    position: absolute; top: 6px; right: 6px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #f9a825; color: #fff; border: none;
+    cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
+  }
+
+  .carta.esclusa { background: #eee; opacity: .4; border-left-color: #999 !important; }
+  .carta.esclusa .nome { text-decoration: line-through; }
+  .carta.esclusa { box-shadow: none !important; }
+
+  /* ============ MODALE ============ */
+  .modale {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 15px;
+  }
+  .modale-box {
+    background: #fff; padding: 20px; border-radius: 10px;
+    max-width: 480px; width: 100%;
+    box-shadow: 0 5px 20px rgba(0,0,0,.3);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modale-box h3 { margin-top: 0; color: #6b1e1e; }
+
+  .scelta-tipo { display: flex; gap: 10px; margin: 12px 0; }
+  .tipo-btn {
+    flex: 1; padding: 14px; font-size: 15px;
+    background: #eee; color: #333;
+    border: 2px solid transparent; border-radius: 6px;
+  }
+  .tipo-btn.sel { background: #6b1e1e; color: #fff; }
+
+  .griglia-colori { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .col-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px; border-radius: 6px;
+    border: 2px solid #ddd; background: #fafafa;
+    cursor: pointer; font-size: 13px;
+  }
+  .col-btn.sel { border-color: #6b1e1e; background: #fff3e0; font-weight: bold; }
+
+  .griglia-numeri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .num-btn {
+    padding: 16px 0; text-align: center;
+    border: 2px solid #ddd; border-radius: 6px;
+    background: #fafafa; cursor: pointer;
+    font-size: 22px; font-weight: bold;
+  }
+  .num-btn.sel { border-color: #6b1e1e; background: #fff3e0; }
+
+  .anteprima {
+    background: #f5f5f5; border-radius: 6px;
+    padding: 10px; margin: 12px 0; font-size: 13px;
+    min-height: 50px;
+  }
+  .anteprima .uno { background: #c8e6c9; color: #2e7d32; padding: 8px; border-radius: 5px; font-weight: bold; }
+  .anteprima .piu { background: #fff9c4; color: #f57f17; padding: 8px; border-radius: 5px; }
+  .anteprima .zero { background: #ffcdd2; color: #c62828; padding: 8px; border-radius: 5px; }
+  .anteprima .lista-cand { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .anteprima .cand { padding: 2px 6px; border-radius: 3px; background: #e3f2fd; color: #1565c0; font-size: 12px; }
+
+  .bottoni-modale { display: flex; gap: 8px; margin-top: 15px; }
+  .bottoni-modale button { flex: 1; padding: 12px; font-size: 14px; }
+
+  /* ============ FESTEGGIAMENTO ============ */
+  .festeggiamento {
+    position: fixed; inset: 0; background: rgba(0,0,0,.65);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+    animation: fadeIn .3s;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .festeggiamento-box {
+    background: linear-gradient(160deg, #fffdf5 0%, #fff8e1 100%);
+    padding: 30px; border-radius: 20px;
+    border: 5px solid #f9a825;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 0 80px rgba(249,168,37,.6);
+    text-align: center;
+    max-width: 420px; width: 100%;
+    animation: popIn .5s cubic-bezier(.17,.89,.32,1.49);
+  }
+  @keyframes popIn {
+    0%   { transform: scale(.3) rotate(-15deg); opacity: 0; }
+    60%  { transform: scale(1.08) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  .fest-emoji { font-size: 48px; margin-bottom: 10px; animation: bounce 0.8s ease infinite; }
+  .fest-titolo { font-size: 14px; font-weight: bold; color: #8b5a00; letter-spacing: 3px; }
+  .fest-sottotitolo { font-size: 26px; font-weight: bold; color: #6b1e1e; margin: 4px 0 15px; text-shadow: 0 2px 0 #ffd54f; }
+  .fest-sep { width: 60px; height: 3px; background: #f9a825; margin: 0 auto 15px; border-radius: 2px; }
+  .fest-label { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 2px; }
+  .fest-carta { font-size: 28px; font-weight: bold; color: #6b1e1e; margin: 8px 0; padding: 10px 15px; background: #fff; border-radius: 8px; border: 2px dashed #f9a825; }
+  .fest-tipo { font-size: 11px; color: #666; letter-spacing: 2px; margin-bottom: 20px; }
+  .festeggiamento button { width: 100%; padding: 12px; font-size: 15px; font-weight: bold; background: linear-gradient(135deg, #6b1e1e, #8b2e2e); border-radius: 8px; }
+
+  /* ============ PARTITA RISOLTA ============ */
+  .partita-risolta-banner {
+    background: linear-gradient(135deg, #fff8e1 0%, #ffd54f 50%, #fff8e1 100%);
+    background-size: 300% 300%;
+    animation: shimmerRisolto 4s ease infinite;
+    border: 4px solid #f9a825;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(249,168,37,.5);
+    margin-bottom: 20px;
+  }
+  @keyframes shimmerRisolto {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+  .pr-emoji { font-size: 48px; animation: bounce 1s ease infinite; }
+  .pr-titolo { font-size: 28px; font-weight: bold; color: #6b1e1e; letter-spacing: 4px; margin: 5px 0; text-shadow: 0 2px 0 #fff; }
+  .pr-sottotitolo { font-size: 14px; color: #8b5a00; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px; }
+  .pr-soluzione { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+  .pr-carta { background: #fff; border: 3px solid #f9a825; border-radius: 10px; padding: 15px 20px; min-width: 140px; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+  .pr-cont { font-size: 10px; font-weight: bold; letter-spacing: 1px; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+  .pr-nome { font-size: 18px; font-weight: bold; color: #6b1e1e; }
+  .pr-tipo { font-size: 10px; color: #999; letter-spacing: 1px; margin-top: 4px; }
+
+  /* ============ CORIANDOLI ============ */
+  .confetti {
+    position: fixed; top: -20px;
+    width: 10px; height: 14px;
+    z-index: 199; pointer-events: none;
+    animation: caduta linear forwards;
+  }
+  @keyframes caduta {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ============ PROFILO / MENU ============ */
+  .menu-profilo {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 150; padding: 20px;
+  }
+  .menu-profilo-box {
+    background: #fff; padding: 20px; border-radius: 10px;
+    max-width: 400px; width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,.3);
+  }
+  .menu-profilo-box h3 { margin-top: 0; }
+  .menu-profilo-box label { display: block; margin: 12px 0 4px; font-size: 13px; color: #666; }
+  .menu-profilo-box input[type=text] {
+    width: 100%; padding: 10px; border: 1px solid #bbb;
+    border-radius: 5px; font-size: 14px;
+  }
+  .menu-bottoni { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+  .menu-bottoni button { flex: 1; min-width: 100px; padding: 10px; font-size: 13px; }
+
+  .badge-conteggio {
+    display: inline-block; background: #6b1e1e; color: #fff;
+    padding: 1px 6px; border-radius: 10px; font-size: 10px;
+    margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">Caricamento...</div>
+
+<script>
+// ================================================================
+// DATI DEL GIOCO (hardcoded)
+// ================================================================
+const CONTENITORI = [
+  { id: 'VERDE',  nome: 'VERDE',  colore: '#2e7d32' },
+  { id: 'NERO',   nome: 'NERO',   colore: '#222222' },
+  { id: 'AVORIO', nome: 'AVORIO', colore: '#d9cfb0' }
+];
+
+const POSIZIONI = ['alto_sx', 'alto_dx', 'basso_sx', 'basso_dx'];
+
+const CARTE = [
+  // Personaggi
+  { id: 1, nome: 'Col. Mustard',   tipo: 'personaggio', c1: 'Verde',    n1: 7, c2: 'Giallo',   n2: 1 },
+  { id: 2, nome: 'Signorina Rosa', tipo: 'personaggio', c1: 'Giallo',   n1: 2, c2: 'Violetto', n2: 4 },
+  { id: 3, nome: 'Prof. Plum',     tipo: 'personaggio', c1: 'Blu',      n1: 5, c2: 'Violetto', n2: 2 },
+  { id: 4, nome: 'Rev. Verde',     tipo: 'personaggio', c1: 'Bianco',   n1: 2, c2: 'Verde',    n2: 7 },
+  { id: 5, nome: 'Capitano Brown', tipo: 'personaggio', c1: 'Rosso',    n1: 4, c2: 'Verde',    n2: 0 },
+  { id: 6, nome: 'Sig.ra Pavone',  tipo: 'personaggio', c1: 'Giallo',   n1: 5, c2: 'Blu',      n2: 1 },
+  { id: 7, nome: 'Miss Scarlett',  tipo: 'personaggio', c1: 'Violetto', n1: 4, c2: 'Rosso',    n2: 1 },
+  { id: 8, nome: 'Sig.ra Bianchi', tipo: 'personaggio', c1: 'Blu',      n1: 5, c2: 'Bianco',   n2: 0 },
+  { id: 9, nome: 'Serg. Gray',     tipo: 'personaggio', c1: 'Bianco',   n1: 7, c2: 'Rosso',    n2: 0 },
+  // Armi
+  { id: 10, nome: 'Pugnale',        tipo: 'arma', c1: 'Verde',    n1: 2, c2: 'Bianco',   n2: 5 },
+  { id: 11, nome: 'Candeliere',     tipo: 'arma', c1: 'Rosso',    n1: 0, c2: 'Bianco',   n2: 4 },
+  { id: 12, nome: 'Pistola',        tipo: 'arma', c1: 'Verde',    n1: 1, c2: 'Rosso',    n2: 4 },
+  { id: 13, nome: 'Corda',          tipo: 'arma', c1: 'Giallo',   n1: 2, c2: 'Violetto', n2: 7 },
+  { id: 14, nome: 'Spranga',        tipo: 'arma', c1: 'Violetto', n1: 0, c2: 'Blu',      n2: 5 },
+  { id: 15, nome: 'Chiave inglese', tipo: 'arma', c1: 'Giallo',   n1: 1, c2: 'Blu',      n2: 7 },
+  { id: 16, nome: 'Carabina',       tipo: 'arma', c1: 'Violetto', n1: 2, c2: 'Rosso',    n2: 4 },
+  { id: 17, nome: 'Scure',          tipo: 'arma', c1: 'Blu',      n1: 1, c2: 'Bianco',   n2: 5 },
+  { id: 18, nome: 'Veleno',         tipo: 'arma', c1: 'Verde',    n1: 0, c2: 'Giallo',   n2: 7 },
+  // Stanze
+  { id: 19, nome: 'Anticamera',        tipo: 'stanza', c1: 'Rosso',    n1: 4, c2: 'Violetto', n2: 0 },
+  { id: 20, nome: 'Veranda',           tipo: 'stanza', c1: 'Verde',    n1: 0, c2: 'Bianco',   n2: 7 },
+  { id: 21, nome: 'Sala da pranzo',    tipo: 'stanza', c1: 'Blu',      n1: 5, c2: 'Giallo',   n2: 0 },
+  { id: 22, nome: 'Cucina',            tipo: 'stanza', c1: 'Bianco',   n1: 1, c2: 'Rosso',    n2: 7 },
+  { id: 23, nome: 'Sala da ballo',     tipo: 'stanza', c1: 'Giallo',   n1: 1, c2: 'Violetto', n2: 4 },
+  { id: 24, nome: 'Salotto',           tipo: 'stanza', c1: 'Verde',    n1: 4, c2: 'Rosso',    n2: 2 },
+  { id: 25, nome: 'Sala del biliardo', tipo: 'stanza', c1: 'Blu',      n1: 2, c2: 'Violetto', n2: 7 },
+  { id: 26, nome: 'Biblioteca',        tipo: 'stanza', c1: 'Verde',    n1: 1, c2: 'Giallo',   n2: 5 },
+  { id: 27, nome: 'Studio',            tipo: 'stanza', c1: 'Bianco',   n1: 2, c2: 'Blu',      n2: 5 }
+];
+
+const COLORI_HEX = {
+  'Rosso':'#d32f2f','Verde':'#388e3c','Giallo':'#fbc02d',
+  'Blu':'#1976d2','Violetto':'#7b1fa2','Bianco':'#ffffff'
+};
+const COLORI_LISTA = ['Rosso','Verde','Giallo','Blu','Violetto','Bianco'];
+const NUMERI = [0,1,2,4,5,7];
+
+const NOMI_CAT = { 
+  personaggio: '👤 personaggi', 
+  arma: '🔪 armi', 
+  stanza: '🏠 stanze' 
+};
+
+// ================================================================
+// GESTIONE STORAGE (localStorage)
+// ================================================================
+const STORAGE_KEY_PROFILI = 'supercluedo_profili';
+const STORAGE_KEY_STATO = 'supercluedo_stato_';
+const STORAGE_KEY_ATTIVO = 'supercluedo_profilo_attivo';
+
+function caricaProfili() {
+  const raw = localStorage.getItem(STORAGE_KEY_PROFILI);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function salvaProfili(profili) {
+  localStorage.setItem(STORAGE_KEY_PROFILI, JSON.stringify(profili));
+}
+
+function getProfiloAttivo() {
+  return localStorage.getItem(STORAGE_KEY_ATTIVO);
+}
+
+function setProfiloAttivo(id) {
+  localStorage.setItem(STORAGE_KEY_ATTIVO, id);
+}
+
+function statoVuoto() {
+  const finestrelle = [];
+  CONTENITORI.forEach(cont => {
+    POSIZIONI.forEach(pos => {
+      finestrelle.push({
+        id: cont.id + '_' + pos,
+        contenitore: cont.id,
+        posizione: pos,
+        tipo: null,
+        valore: null,
+        compilata: 0
+      });
+    });
+  });
+  return { finestrelle, esclusioni: [] };
+}
+
+function caricaStato(profiloId) {
+  const raw = localStorage.getItem(STORAGE_KEY_STATO + profiloId);
+  if (!raw) return statoVuoto();
+  try { return JSON.parse(raw); } catch(e) { return statoVuoto(); }
+}
+
+function salvaStato(profiloId, stato) {
+  localStorage.setItem(STORAGE_KEY_STATO + profiloId, JSON.stringify(stato));
+}
+
+// ================================================================
+// STATO APPLICAZIONE
+// ================================================================
+let stato = null;
+let profiloCorrente = null;
+let bordiContenitori = {};
+let partitaRisolta = false;
+let modaleAperta = null;
+let modTipo = null;
+let modValore = null;
+let contenitoriGiaRisolti = new Set();
+let partitaGiaFesteggiata = false;
+
+// ================================================================
+// LOGICA DI DEDUZIONE (equivalente all'API PHP)
+// ================================================================
+function carteCompatibiliConIndizi(indizi) {
+  if (indizi.length === 0) return CARTE.map(c => ({ id: c.id, tipo: c.tipo }));
+  return CARTE.filter(carta => {
+    return indizi.every(ind => {
+      if (ind.tipo === 'colore') {
+        return carta.c1 === ind.valore || carta.c2 === ind.valore;
+      } else {
+        return carta.n1 === ind.valore || carta.n2 === ind.valore;
+      }
+    });
+  }).map(c => ({ id: c.id, tipo: c.tipo }));
+}
+
+function calcolaDeduzioni() {
+  const statoPerCont = {};
+  CONTENITORI.forEach(cont => {
+    const finCont = stato.finestrelle.filter(f => f.contenitore === cont.id && f.compilata);
+    const indizi = finCont.map(f => ({ tipo: f.tipo, valore: f.tipo === 'numero' ? parseInt(f.valore) : f.valore }));
+    const tutteCarte = carteCompatibiliConIndizi(indizi);
+    const carteFiltrate = tutteCarte.filter(c => !stato.esclusioni.includes(c.id));
+    statoPerCont[cont.id] = {
+      colore: cont.colore,
+      carte: carteFiltrate,
+      num_indizi: indizi.length,
+      cat_escluse: []
+    };
+  });
+
+  // Motore iterativo
+  const MAX_GIRI = 10;
+  for (let giro = 0; giro < MAX_GIRI; giro++) {
+    let cambiato = false;
+
+    const catPresenti = {};
+    Object.entries(statoPerCont).forEach(([nome, info]) => {
+      const cat = { personaggio: 0, arma: 0, stanza: 0 };
+      info.carte.forEach(c => {
+        if (!info.cat_escluse.includes(c.tipo)) cat[c.tipo]++;
+      });
+      catPresenti[nome] = cat;
+    });
+
+    Object.entries(statoPerCont).forEach(([nome, info]) => {
+      const cat = catPresenti[nome];
+      const catAttive = Object.entries(cat).filter(([k,v]) => v > 0).map(([k]) => k);
+
+      if (catAttive.length === 1) {
+        const catVincolata = catAttive[0];
+        Object.entries(statoPerCont).forEach(([nomeAltro, infoAltro]) => {
+          if (nomeAltro === nome) return;
+          if (!infoAltro.cat_escluse.includes(catVincolata)) {
+            infoAltro.cat_escluse.push(catVincolata);
+            cambiato = true;
+          }
+        });
+      }
+    });
+
+    if (!cambiato) break;
+  }
+
+  // Risultato finale
+  const risultato = {};
+  Object.entries(statoPerCont).forEach(([nome, info]) => {
+    const carteFiltrate = info.carte
+      .filter(c => !info.cat_escluse.includes(c.tipo))
+      .map(c => c.id);
+    const catFinali = { personaggio: false, arma: false, stanza: false };
+    info.carte.forEach(c => {
+      if (!info.cat_escluse.includes(c.tipo)) catFinali[c.tipo] = true;
+    });
+    risultato[nome] = {
+      colore: info.colore,
+      carte_ids: carteFiltrate,
+      categorie_escluse: info.cat_escluse,
+      categorie: catFinali,
+      num_indizi: info.num_indizi
+    };
+  });
+
+  // Flag partita risolta
+  let tuttiRisolti = true;
+  Object.values(risultato).forEach(info => {
+    if (info.carte_ids.length !== 1) tuttiRisolti = false;
+  });
+  risultato._partita_risolta = tuttiRisolti;
+
+  return risultato;
+}
+
+// ================================================================
+// RENDER
+// ================================================================
+function renderTutto() {
+  if (!stato) return;
+
+  bordiContenitori = calcolaDeduzioni();
+  partitaRisolta = bordiContenitori._partita_risolta === true;
+  delete bordiContenitori._partita_risolta;
+
+  let bannerPartita = '';
+  if (partitaRisolta) {
+    const soluzione = Object.entries(bordiContenitori).map(([nome, info]) => {
+      const carta = CARTE.find(c => c.id === info.carte_ids[0]);
+      return { nome, carta, colore: info.colore };
+    });
+    bannerPartita = `
+      <div class="partita-risolta-banner">
+        <div class="pr-emoji">🏆🔍🏆</div>
+        <div class="pr-titolo">PARTITA RISOLTA!</div>
+        <div class="pr-sottotitolo">Le 3 carte del delitto sono:</div>
+        <div class="pr-soluzione">
+          ${soluzione.map(s => `
+            <div class="pr-carta">
+              <div class="pr-cont" style="background:${s.colore};color:${s.nome==='AVORIO'?'#000':'#fff'}">${s.nome}</div>
+              <div class="pr-nome">${escapeHtml(s.carta ? s.carta.nome : '?')}</div>
+              <div class="pr-tipo">${s.carta ? s.carta.tipo.toUpperCase() : ''}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('app').innerHTML = `
+    <div class="barra">
+      <h1>🕵️ SuperCluedo</h1>
+      <div class="utente">
+        <select id="selProfilo" onchange="cambiaProfilo(this.value)">
+          ${caricaProfili().map(p => 
+            `<option value="${p.id}" ${p.id === profiloCorrente ? 'selected' : ''}>${escapeHtml(p.nome)}</option>`
+          ).join('')}
+        </select>
+        <button class="secondary" onclick="apriMenuProfilo()" title="Gestisci profili">⚙️</button>
+        <button class="secondary" onclick="esportaTutto()" title="Esporta dati">📥</button>
+        <button class="secondary" onclick="importaTutto()" title="Importa dati">📤</button>
+      </div>
+    </div>
+    ${bannerPartita}
+    <h2>📦 Contenitori e finestrelle</h2>
+    <div class="contenitori-wrap">${renderContenitori()}</div>
+    <h2>🎴 Carte del mazzo</h2>
+    ${renderLegendaContenitori()}
+    ${renderCarte()}
+    <div class="card" style="text-align:center;margin-top:15px">
+      <button class="secondary" onclick="resetTutto()">🔄 Reset tutto il taccuino</button>
+    </div>
+  `;
+}
+
+function renderContenitori() {
+  const perCont = {};
+  stato.finestrelle.forEach(f => {
+    if (!perCont[f.contenitore]) perCont[f.contenitore] = [];
+    perCont[f.contenitore].push(f);
+  });
+
+  return CONTENITORI.map(cont => {
+    const items = perCont[cont.id] || [];
+    const coloreTitolo = cont.id === 'AVORIO' ? '#000' : '#fff';
+    const compilate = items.filter(f => f.compilata).length;
+    const info = bordiContenitori[cont.id] || {};
+    const carteIds = info.carte_ids || [];
+    const catEscluse = info.categorie_escluse || [];
+    const nCand = compilate > 0 ? carteIds.length : 27;
+    const risolto = nCand === 1 && compilate > 0;
+    const cartaUnica = risolto ? CARTE.find(c => c.id === carteIds[0]) : null;
+    const classeRisolto = risolto ? 'risolto' : '';
+    const bannerCat = catEscluse.length > 0 
+      ? `<div class="banner-cat-escluse">🚫 Non può contenere: ${catEscluse.map(c => NOMI_CAT[c]).join(', ')}</div>` 
+      : '';
+
+    return `
+      <div class="contenitore ${classeRisolto}">
+        <div class="cont-titolo" style="background:${cont.colore};color:${coloreTitolo}">
+          ${cont.nome}
+          <div style="font-size:10px;font-weight:normal;opacity:.9;margin-top:2px">
+            ${compilate}/4 finestrelle · ${risolto ? '🎉 RISOLTO' : nCand + ' carte possibili'}
+          </div>
+        </div>
+        ${bannerCat}
+        ${risolto ? `
+          <div class="banner-soluzione">
+            <div class="banner-emoji">🎯</div>
+            <div class="banner-testo">
+              <div class="banner-label">CARTA IDENTIFICATA</div>
+              <div class="banner-nome">${escapeHtml(cartaUnica ? cartaUnica.nome : '?')}</div>
+            </div>
+          </div>
+        ` : ''}
+        <div class="finestrelle-grid">
+          ${items.map(f => renderFinestrella(f)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderFinestrella(f) {
+  const etichette = {
+    alto_sx: '↖ alto sx', alto_dx: '↗ alto dx',
+    basso_sx: '↙ basso sx', basso_dx: '↘ basso dx'
+  };
+  
+  if (!f.compilata) {
+    return `
+      <div class="fin" onclick="apriModale('${f.id}')">
+        <div class="fin-label">${etichette[f.posizione]}</div>
+        <div class="fin-vuota">
+          <div style="text-align:center">
+            <div style="font-size:24px;line-height:1">+</div>
+            <div style="font-size:9px;color:#aaa;margin-top:2px">da scoprire</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  let visuale = '';
+  if (f.tipo === 'colore') {
+    const hex = COLORI_HEX[f.valore] || '#ccc';
+    const bordo = (f.valore === 'Bianco' || f.valore === 'Giallo') ? '2px solid #333' : '1px solid #666';
+    visuale = `<span class="cerchio" style="background:${hex};border:${bordo};width:22px;height:22px"></span>
+               <span style="font-weight:bold">${f.valore}</span>`;
+  } else if (f.tipo === 'numero') {
+    visuale = `<span class="quad" style="font-size:18px;padding:4px 10px">${f.valore}</span>
+               <span style="color:#666">numero</span>`;
+  }
+
+  const carteIds = bordiContenitori[f.contenitore]?.carte_ids || [];
+  const n = carteIds.length;
+  let candTxt = '—';
+  if (n === 1) {
+    const cu = CARTE.find(c => c.id === carteIds[0]);
+    candTxt = `<span style="color:#2e7d32;font-weight:bold">✓ ${escapeHtml(cu?.nome || '?')}</span>`;
+  } else if (n > 0) {
+    candTxt = `${n} carte nel ${f.contenitore}`;
+  }
+
+  return `
+    <div class="fin compilata" onclick="apriModale('${f.id}')">
+      <div class="fin-label">
+        <span>${etichette[f.posizione]}</span>
+        <span style="color:#2e7d32;font-weight:bold">✓</span>
+      </div>
+      <div class="fin-dati">${visuale}</div>
+      <div class="fin-candidati">${candTxt}</div>
+      <div class="fin-azioni" onclick="event.stopPropagation()">
+        <button class="svuota" onclick="resetFin('${f.id}')">🗑 Svuota</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderLegendaContenitori() {
+  return `
+    <div class="legenda">
+      <span style="color:#666"><b>Cornice colorata = contenitore in cui la carta potrebbe essere</b></span>
+      ${CONTENITORI.map(cont =>
+        `<span class="voce"><span class="quadratino" style="background:${cont.colore}"></span>${cont.nome}</span>`
+      ).join('')}
+    </div>
+  `;
+}
+
+function renderCarte() {
+  const gruppi = { personaggio: [], arma: [], stanza: [] };
+  CARTE.forEach(c => gruppi[c.tipo].push(c));
+
+  const etichette = {
+    personaggio: '👤 Personaggi',
+    arma: '🔪 Oggetti del delitto',
+    stanza: '🏠 Stanze'
+  };
+
+  return ['personaggio','arma','stanza'].map(tipo => {
+    const lista = [...gruppi[tipo]].sort((a,b) => {
+      const aEscl = stato.esclusioni.includes(a.id) ? 1 : 0;
+      const bEscl = stato.esclusioni.includes(b.id) ? 1 : 0;
+      return (aEscl - bEscl) || a.nome.localeCompare(b.nome);
+    });
+    const attive = lista.filter(c => !stato.esclusioni.includes(c.id)).length;
+
+    return `
+      <div class="card">
+        <div class="tipo-titolo">
+          <h3>${etichette[tipo]}</h3>
+          <span class="contatore">${attive} in gioco su ${lista.length}</span>
+        </div>
+        <div class="griglia-carte">
+          ${lista.map(c => renderCarta(c, tipo)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCarta(c, tipo) {
+  const c1 = COLORI_HEX[c.c1] || '#ccc';
+  const c2 = COLORI_HEX[c.c2] || '#ccc';
+  const bordo1 = (c.c1 === 'Bianco' || c.c1 === 'Giallo') ? '2px solid #333' : '1px solid #666';
+  const bordo2 = (c.c2 === 'Bianco' || c.c2 === 'Giallo') ? '2px solid #333' : '1px solid #666';
+  const esclusa = stato.esclusioni.includes(c.id);
+
+  const btn = esclusa
+    ? `<button class="btn-ripristina" onclick="ripristinaCarta(${c.id})" title="Ripristina">↺</button>`
+    : `<button class="btn-x" onclick="escludiCarta(${c.id})" title="Escludi">✕</button>`;
+
+  const contenitoriCompatibili = [];
+  Object.entries(bordiContenitori).forEach(([nome, data]) => {
+    if (data.carte_ids && data.carte_ids.includes(c.id)) {
+      contenitoriCompatibili.push({ nome, colore: data.colore });
+    }
+  });
+
+  let stileBordo = '';
+  if (contenitoriCompatibili.length > 0 && !esclusa) {
+    const ombre = contenitoriCompatibili.map((cc, i) => `0 0 0 ${2 + i * 3}px ${cc.colore}`);
+    stileBordo = `box-shadow: ${ombre.reverse().join(', ')};`;
+  }
+
+  const tags = contenitoriCompatibili.length > 0 
+    ? contenitoriCompatibili.map(cc => 
+        `<span class="tag-cont" style="background:${cc.colore};color:${cc.nome==='AVORIO'?'#000':'#fff'}">${cc.nome}</span>`).join('')
+    : '';
+
+  return `
+    <div class="carta tipo-${tipo} ${esclusa ? 'esclusa' : ''}" style="${stileBordo}">
+      ${btn}
+      <div class="nome">${escapeHtml(c.nome)}</div>
+      <div class="codici">
+        <span><span class="cerchio" style="background:${c1};border:${bordo1}"></span><span class="quad">${c.n1}</span></span>
+        <span><span class="cerchio" style="background:${c2};border:${bordo2}"></span><span class="quad">${c.n2}</span></span>
+      </div>
+      ${tags ? `<div class="tag-contenitori">${tags}</div>` : ''}
+    </div>
+  `;
+}
+
+// ================================================================
+// AZIONI
+// ================================================================
+function apriModale(finId) {
+  const f = stato.finestrelle.find(x => x.id === finId);
+  if (!f) return;
+  modaleAperta = f;
+  modTipo = f.tipo || null;
+  modValore = f.valore;
+
+  const m = document.createElement('div');
+  m.className = 'modale';
+  m.id = 'modale';
+  m.innerHTML = `
+    <div class="modale-box">
+      <h3>Cosa vedi sotto questa finestrella?</h3>
+      <p style="font-size:13px;color:#666">Contenitore <b>${f.contenitore}</b> — ${f.posizione.replace('_',' ')}</p>
+      <p style="margin:15px 0 6px;font-weight:bold">Scegli il tipo di indizio:</p>
+      <div class="scelta-tipo">
+        <button type="button" class="tipo-btn ${modTipo==='colore'?'sel':''}" onclick="scegliTipo('colore')">🎨 Colore</button>
+        <button type="button" class="tipo-btn ${modTipo==='numero'?'sel':''}" onclick="scegliTipo('numero')">🔢 Numero</button>
+      </div>
+      <div id="zonaColore" style="display:${modTipo==='colore'?'block':'none'}">
+        <p style="margin:10px 0 6px;font-weight:bold">Quale colore?</p>
+        <div class="griglia-colori">
+          ${COLORI_LISTA.map(c => {
+            const hex = COLORI_HEX[c];
+            const bordo = (c === 'Bianco' || c === 'Giallo') ? '2px solid #333' : '1px solid #666';
+            const sel = modTipo==='colore' && modValore===c;
+            return `<div class="col-btn ${sel?'sel':''}" onclick="scegliColore('${c}')">
+                      <span class="cerchio" style="background:${hex};border:${bordo};width:22px;height:22px"></span>
+                      <span>${c}</span>
+                    </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div id="zonaNumero" style="display:${modTipo==='numero'?'block':'none'}">
+        <p style="margin:10px 0 6px;font-weight:bold">Quale numero?</p>
+        <div class="griglia-numeri">
+          ${NUMERI.map(n => {
+            const sel = modTipo==='numero' && String(modValore)===String(n);
+            return `<div class="num-btn ${sel?'sel':''}" onclick="scegliNumero(${n})">${n}</div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="anteprima" id="anteprima">Seleziona un colore o un numero…</div>
+      <div class="bottoni-modale">
+        <button onclick="salvaModale()">💾 Salva</button>
+        <button class="secondary" onclick="chiudiModale()">Annulla</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(m);
+
+  if (modTipo && modValore !== null) aggiornaAnteprima();
+}
+
+function scegliTipo(t) {
+  modTipo = t;
+  modValore = null;
+  document.getElementById('zonaColore').style.display = (t==='colore')?'block':'none';
+  document.getElementById('zonaNumero').style.display = (t==='numero')?'block':'none';
+  document.querySelectorAll('.tipo-btn').forEach((b,i) => b.classList.toggle('sel', (t==='colore' && i===0) || (t==='numero' && i===1)));
+  document.querySelectorAll('.col-btn, .num-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('anteprima').textContent = 'Seleziona un valore…';
+}
+
+function scegliColore(c) {
+  modValore = c;
+  document.querySelectorAll('.col-btn').forEach(b => b.classList.toggle('sel', b.textContent.includes(c)));
+  aggiornaAnteprima();
+}
+
+function scegliNumero(n) {
+  modValore = n;
+  document.querySelectorAll('.num-btn').forEach(b => b.classList.toggle('sel', b.textContent === String(n)));
+  aggiornaAnteprima();
+}
+
+function aggiornaAnteprima() {
+  if (!modTipo || modValore === null || modValore === undefined) return;
+  const box = document.getElementById('anteprima');
+  
+  const carte = CARTE.filter(c => {
+    if (modTipo === 'colore') return c.c1 === modValore || c.c2 === modValore;
+    return c.n1 === modValore || c.n2 === modValore;
+  });
+
+  if (carte.length === 0) {
+    box.innerHTML = `<div class="zero">⚠️ Nessuna carta ha questo ${modTipo}</div>`;
+  } else if (carte.length === 1) {
+    box.innerHTML = `<div class="uno">✅ Unica carta possibile: <b>${escapeHtml(carte[0].nome)}</b></div>`;
+  } else {
+    box.innerHTML = `<div class="piu">🔍 ${carte.length} carte hanno questo ${modTipo}:
+      <div class="lista-cand">${carte.map(c => `<span class="cand">${escapeHtml(c.nome)}</span>`).join('')}</div></div>`;
+  }
+}
+
+function salvaModale() {
+  if (!modTipo || modValore === null || modValore === undefined) {
+    alert('Scegli prima un colore o un numero');
+    return;
+  }
+  modaleAperta.tipo = modTipo;
+  modaleAperta.valore = modValore;
+  modaleAperta.compilata = 1;
+  salvaStato(profiloCorrente, stato);
+  chiudiModale();
+  renderTutto();
+  controllaNuoveRisoluzioni();
+}
+
+function chiudiModale() {
+  const m = document.getElementById('modale');
+  if (m) m.remove();
+  modaleAperta = null;
+  modTipo = null;
+  modValore = null;
+}
+
+function resetFin(id) {
+  if (!confirm('Svuotare questa finestrella?')) return;
+  const f = stato.finestrelle.find(x => x.id === id);
+  if (f) { f.tipo = null; f.valore = null; f.compilata = 0; }
+  salvaStato(profiloCorrente, stato);
+  renderTutto();
+  controllaNuoveRisoluzioni();
+}
+
+function escludiCarta(id) {
+  if (!stato.esclusioni.includes(id)) stato.esclusioni.push(id);
+  salvaStato(profiloCorrente, stato);
+  renderTutto();
+  controllaNuoveRisoluzioni();
+}
+
+function ripristinaCarta(id) {
+  stato.esclusioni = stato.esclusioni.filter(x => x !== id);
+  salvaStato(profiloCorrente, stato);
+  renderTutto();
+  controllaNuoveRisoluzioni();
+}
+
+function resetTutto() {
+  if (!confirm('Cancellare TUTTE le finestrelle e TUTTE le esclusioni?')) return;
+  stato = statoVuoto();
+  contenitoriGiaRisolti.clear();
+  partitaGiaFesteggiata = false;
+  salvaStato(profiloCorrente, stato);
+  renderTutto();
+}
+
+// ================================================================
+// CONTROLLO RISOLUZIONI + FESTEGGIAMENTI
+// ================================================================
+function controllaNuoveRisoluzioni() {
+  Object.entries(bordiContenitori).forEach(([nome, data]) => {
+    const n = (data.carte_ids || []).length;
+    if (n === 1 && !contenitoriGiaRisolti.has(nome)) {
+      contenitoriGiaRisolti.add(nome);
+      const carta = CARTE.find(c => c.id === data.carte_ids[0]);
+      if (carta) mostraFesteggiamento(nome, carta, data.colore);
+    }
+    if (n !== 1 && contenitoriGiaRisolti.has(nome)) contenitoriGiaRisolti.delete(nome);
+  });
+
+  if (partitaRisolta && !partitaGiaFesteggiata) {
+    partitaGiaFesteggiata = true;
+    setTimeout(() => mostraPartitaRisolta(), 1200);
+  }
+  if (!partitaRisolta) partitaGiaFesteggiata = false;
+}
+
+function mostraFesteggiamento(contenitore, carta, colore) {
+  lanciaCoriandoli();
+  const box = document.createElement('div');
+  box.className = 'festeggiamento';
+  box.innerHTML = `
+    <div class="festeggiamento-box" style="border-color:${colore}">
+      <div class="fest-emoji">🎉🎯🎉</div>
+      <div class="fest-titolo">CONTENITORE ${contenitore}</div>
+      <div class="fest-sottotitolo">RISOLTO!</div>
+      <div class="fest-sep"></div>
+      <div class="fest-label">La carta nascosta è</div>
+      <div class="fest-carta">${escapeHtml(carta.nome)}</div>
+      <div class="fest-tipo">${carta.tipo.toUpperCase()}</div>
+      <button onclick="this.closest('.festeggiamento').remove()">Fantastico! ✓</button>
+    </div>
+  `;
+  document.body.appendChild(box);
+  setTimeout(() => { if (box.parentElement) box.remove(); }, 8000);
+}
+
+function mostraPartitaRisolta() {
+  const soluzione = Object.entries(bordiContenitori).map(([nome, info]) => {
+    const carta = CARTE.find(c => c.id === info.carte_ids[0]);
+    return { nome, carta, colore: info.colore };
+  });
+  lanciaCoriandoli();
+  setTimeout(lanciaCoriandoli, 800);
+  setTimeout(lanciaCoriandoli, 1600);
+
+  const box = document.createElement('div');
+  box.className = 'festeggiamento';
+  box.innerHTML = `
+    <div class="festeggiamento-box" style="border-color:#f9a825;max-width:560px">
+      <div class="fest-emoji">🏆🔍🏆</div>
+      <div class="fest-titolo">CASO RISOLTO!</div>
+      <div class="fest-sottotitolo">Le 3 carte del delitto</div>
+      <div class="fest-sep"></div>
+      <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:15px 0">
+        ${soluzione.map(s => `
+          <div style="background:#fff;border:3px solid #f9a825;border-radius:10px;padding:12px 15px;min-width:110px">
+            <div style="font-size:9px;font-weight:bold;letter-spacing:1px;padding:3px 6px;border-radius:3px;display:inline-block;margin-bottom:6px;background:${s.colore};color:${s.nome==='AVORIO'?'#000':'#fff'}">${s.nome}</div>
+            <div style="font-size:16px;font-weight:bold;color:#6b1e1e">${escapeHtml(s.carta ? s.carta.nome : '?')}</div>
+            <div style="font-size:9px;color:#999;letter-spacing:1px;margin-top:2px">${s.carta ? s.carta.tipo.toUpperCase() : ''}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button onclick="this.closest('.festeggiamento').remove()">Congratulazioni! 🎉</button>
+    </div>
+  `;
+  document.body.appendChild(box);
+  setTimeout(() => { if (box.parentElement) box.remove(); }, 15000);
+}
+
+function lanciaCoriandoli() {
+  const colori = ['#f9a825', '#e53935', '#43a047', '#1e88e5', '#8e24aa', '#fb8c00', '#00acc1', '#d81b60'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colori[Math.floor(Math.random() * colori.length)];
+    c.style.animationDuration = (2 + Math.random() * 2) + 's';
+    c.style.animationDelay = (Math.random() * 0.6) + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+// ================================================================
+// GESTIONE PROFILI
+// ================================================================
+function apriMenuProfilo() {
+  const profili = caricaProfili();
+  const m = document.createElement('div');
+  m.className = 'menu-profilo';
+  m.id = 'menuProfilo';
+  m.innerHTML = `
+    <div class="menu-profilo-box">
+      <h3>👤 Gestione profili</h3>
+      <p style="font-size:12px;color:#666">Ogni profilo ha il suo taccuino separato.</p>
+      <div id="listaProfili" style="max-height:200px;overflow-y:auto;margin:10px 0">
+        ${profili.map(p => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px solid #eee">
+            <span style="font-size:14px">
+              ${p.id === profiloCorrente ? '▶ ' : ''}${escapeHtml(p.nome)}
+            </span>
+            ${profili.length > 1 ? `<button class="danger" style="padding:3px 8px;font-size:11px" onclick="eliminaProfilo('${p.id}')">🗑</button>` : ''}
+          </div>
+        `).join('')}
+      </div>
+      <label>Nuovo profilo</label>
+      <input type="text" id="nuovoProfiloNome" placeholder="Nome profilo (es. Marco)">
+      <div class="menu-bottoni">
+        <button onclick="aggiungiProfilo()">+ Crea</button>
+        <button class="secondary" onclick="document.getElementById('menuProfilo').remove()">Chiudi</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(m);
+}
+
+function aggiungiProfilo() {
+  const nome = document.getElementById('nuovoProfiloNome').value.trim();
+  if (!nome) return alert('Inserisci un nome');
+  const profili = caricaProfili();
+  const id = 'p' + Date.now();
+  profili.push({ id, nome });
+  salvaProfili(profili);
+  salvaStato(id, statoVuoto());
+  setProfiloAttivo(id);
+  profiloCorrente = id;
+  stato = caricaStato(id);
+  document.getElementById('menuProfilo').remove();
+  contenitoriGiaRisolti.clear();
+  partitaGiaFesteggiata = false;
+  renderTutto();
+}
+
+function cambiaProfilo(id) {
+  setProfiloAttivo(id);
+  profiloCorrente = id;
+  stato = caricaStato(id);
+  contenitoriGiaRisolti.clear();
+  partitaGiaFesteggiata = false;
+  renderTutto();
+}
+
+function eliminaProfilo(id) {
+  if (!confirm('Eliminare questo profilo e tutti i suoi dati?')) return;
+  let profili = caricaProfili().filter(p => p.id !== id);
+  salvaProfili(profili);
+  localStorage.removeItem(STORAGE_KEY_STATO + id);
+  if (profiloCorrente === id) {
+    profiloCorrente = profili[0].id;
+    setProfiloAttivo(profiloCorrente);
+    stato = caricaStato(profiloCorrente);
+  }
+  document.getElementById('menuProfilo').remove();
+  contenitoriGiaRisolti.clear();
+  partitaGiaFesteggiata = false;
+  renderTutto();
+}
+
+// ================================================================
+// ESPORTA / IMPORTA
+// ================================================================
+function esportaTutto() {
+  const data = {
+    versione: 1,
+    data_esportazione: new Date().toISOString(),
+    profili: caricaProfili(),
+    stati: {}
+  };
+  caricaProfili().forEach(p => {
+    data.stati[p.id] = caricaStato(p.id);
+  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'supercluedo-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importaTutto() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.profili || !data.stati) throw new Error('File non valido');
+        if (!confirm('Importare questo backup? I dati attuali verranno SOVRASCRITTI.')) return;
+        salvaProfili(data.profili);
+        Object.entries(data.stati).forEach(([id, st]) => salvaStato(id, st));
+        setProfiloAttivo(data.profili[0].id);
+        profiloCorrente = data.profili[0].id;
+        stato = caricaStato(profiloCorrente);
+        contenitoriGiaRisolti.clear();
+        partitaGiaFesteggiata = false;
+        renderTutto();
+        alert('Backup importato correttamente!');
+      } catch(err) {
+        alert('Errore nel file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ================================================================
+// UTILITY
+// ================================================================
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ================================================================
+// AVVIO
+// ================================================================
+(function init() {
+  let profili = caricaProfili();
+  if (profili.length === 0) {
+    // Crea profilo di default
+    const id = 'p' + Date.now();
+    profili.push({ id, nome: 'Giocatore 1' });
+    salvaProfili(profili);
+    salvaStato(id, statoVuoto());
+    setProfiloAttivo(id);
+  }
+  profiloCorrente = getProfiloAttivo() || profili[0].id;
+  if (!profili.find(p => p.id === profiloCorrente)) {
+    profiloCorrente = profili[0].id;
+    setProfiloAttivo(profiloCorrente);
+  }
+  stato = caricaStato(profiloCorrente);
+  renderTutto();
+})();
+</script>
+</body>
+</html>

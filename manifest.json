@@ -1,0 +1,26 @@
+{
+  "name": "SuperCluedo Taccuino",
+  "short_name": "SuperCluedo",
+  "description": "Taccuino digitale per le partite di SuperCluedo. Segna indizi, escludi carte, risolvi il caso.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f1ea",
+  "theme_color": "#6b1e1e",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
